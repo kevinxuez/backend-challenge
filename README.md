@@ -49,22 +49,23 @@ pytest
 
 
 
-Decision Justification:
+Model Decision Justification:
 
-Club Model fields + justification:
-Name (STR): Given, useful for filtering
-Code(STR): Given, useful for filtering
+Tag Model fields:
+Name (STR0)
+
+Club Model fields:
+Name (STR): Useful for filtering obv but also remembered to make this not the primary so we can change it
+Code(STR): Useful for filtering, core behind the relatio
 Description(STR): Given, useful for filtering
-Tags(STRING ARRAY): Given, useful for fitering
-Main Focus (STR): could be used to identify the main type of a club, though would conflict with tags because both are generally used for the same purpose
 MemberCount (INT): Allows for us to display the membersize for certain clubs. Given that our old data starsts
 UndergraduatesAllowed (BOOL): Useful for future registration
 GraduatesAllowed(BOOL): Useful for future registration
 
-User Model fields + justifications:
+User Model fields:
 Name (STR): Useful for recognition
 Email (STR): Useful for future features (such as club application openings or updates)
-Favorites (CLUB OR STRING ARRAY): Needed to implement the favorite feature
+
 
 
 
@@ -113,5 +114,43 @@ current thoughts:
 1. no more mutableSet let's try the relationship route
 2. relationships seem to work a lot better then mutableSet so that's a good STRING
 3. my sleeps gonna get cooked when i have to actually implement these APIS
+4. currently reworking everything to fit the relationship, so adding tag stuff migth get miserable
+5. oh my god i have to rework the tests too LOL
+
+3:00
+0. monster caffeine is actually so clutch
+1. OK FINISHED OUT ALL THE KINKS AND BUGS IN THE RELATIONSHIP Model
+2. I'm going to now develop the APIs then go back to adding features and bad-input catchers to the model functions
+3. Cleaning up a lot of slop 
+4. ok it's time to run through most of the code
+5. i fell asleep that was really annoying
+
+4:00
+0. i need to remove all the db.session.commits in my model for better performance
+1. let me look for the most efficient wway to do the search method
+2. graduatses are actually trolling my code holy moly
+3. ok everything seems good time to go to sleep for a bit then wake up and polish
+4. ok time to docstring everything and then ill go to sleep, wake up in like 3-4 hours
+5. i can do all my pure justification after i've started docStringing
+
+5:00
+0. bro imma go to sleep 
+1. lemme use chatgpt to quickly format my stuff such that i have docstrings and a set charcter limit
+2. "Hello Chatgpt
+first, I prefer camelCase to any snake_case, so replace all of those
+second, give every function a formatted docstring where 
+   it's short (gives arg, any bad inputs, and returns) 
+   and all the docstring text is one indent right of the funciton definition
+third, reformat it such that the character limit is 80 characters" yo wait this is actually really nice
+3. sleep!!!!
+
+post-nap goals:
+1. actually writeup some stuff to justify my decision making 
+2. add some more info to some of the docstrings that have additional info
+3. deal with some of the bad input cases if i have time
+4. writeup the 3 writeup answers
+5. see if there are faster search methods out there
+
+
 
 
