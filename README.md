@@ -38,3 +38,26 @@ Follow the instructions on the Technical Challenge page for submission.
 
 Use any tools you think are relevant to the challenge! To install additional packages
 run `poetry add <package_name>` within the directory. Make sure to document your additions.
+
+
+
+
+
+
+Decision Justification:
+
+Club Model fields + justification:
+Name (STR): Given, useful for filtering
+Code(STR): Given, useful for filtering
+Description(STR): Given, useful for filtering
+Tags(STRING ARRAY): Given, useful for fitering
+Main Focus (STR): could be used to identify the main type of a club, though would conflict with tags because both are generally used for the same purpose
+MemberCount (INT): Allows for us to display the membersize for certain clubs. Given that our old data starsts
+UndergraduatesAllowed (BOOL): Useful for future registration
+GraduatesAllowed(BOOL): Useful for future registration
+
+User Model fields + justifications:
+Name (STR): Useful for recognition
+Email (STR): Useful for future features (such as club application openings or updates)
+Favorites (CLUB OR STRING ARRAY): Needed to implement the favorite feature
+

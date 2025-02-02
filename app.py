@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from models import *
 
 DB_FILE = "clubreview.db"
 
@@ -13,6 +14,9 @@ from models import *
 @app.route("/")
 def main():
     return "Welcome to Penn Club Review!"
+  
+
+
 
 
 @app.route("/api")
@@ -22,3 +26,4 @@ def api():
 
 if __name__ == "__main__":
     app.run()
+
