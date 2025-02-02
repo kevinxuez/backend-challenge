@@ -3,7 +3,7 @@ import json
 from app import app, db, DB_FILE
 from models import Club, User
 
-def createUser():
+def create_user():
     """Create a new user with preset favorite clubs.
     (return) None
     """
@@ -11,7 +11,7 @@ def createUser():
     josh = User.createNewUser("Josh", "josh@upenn.edu", favSet)
     User.addUserToDb(josh)
 
-def loadData():
+def load_data():
     """Load club data from 'clubs.json' and add to the database.
     (return) None
     """
@@ -27,5 +27,5 @@ if __name__ == "__main__":
         os.remove(localDbFile)
     with app.app_context():
         db.create_all()
-        createUser()
-        loadData()
+        create_user()
+        load_data()

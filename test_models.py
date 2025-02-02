@@ -23,11 +23,12 @@ def testDataLoading(testClient):
     """
     load_data()
     create_user()
+    db.session.commit()
     with app.app_context():
         josh = User.query.filter_by(username="Josh").first()
         assert josh is not None
         assert josh.email == "josh@upenn.edu"
-        favoriteCodes = {club.code for club in josh.favorite_clubs}
+        favoriteCodes = {club.code for club in josh.favoriteClubs}
         assert favoriteCodes == {"penn-memes"}
 
 
@@ -67,7 +68,7 @@ def testLegacyDataLoading(testClient):
         )
         tagsPppjo = {tag.name for tag in pppjo.tags}
         assert tagsPppjo == {"Pre-Professional", "Athletics", "Undergraduate"}
-
+        db.session.commit()
         lorem = Club.query.filter_by(code="lorem-ipsum").first()
         assert lorem is not None
         tagsLorem = {tag.name for tag in lorem.tags}
@@ -103,12 +104,15 @@ def testUserWithLegacyFavorites(testClient):
         retrievedUser = User.query.filter_by(
             username="legacyUser"
         ).first()
+        db.session.commit()
         assert retrievedUser is not None
-        favoriteCodes = {club.code for club in retrievedUser.favorite_clubs}
+        favoriteCodes = {club.code for club in retrievedUser.favoriteClubs}
         assert favoriteCodes == {"pppjo", "locustlabs"}
         retrievedUser.addFavorite("penn-memes")
-        favoriteCodes = {club.code for club in retrievedUser.favorite_clubs}
+        db.session.commit()
+        favoriteCodes = {club.code for club in retrievedUser.favoriteClubs}
         assert favoriteCodes == {"pppjo", "locustlabs", "penn-memes"}
         retrievedUser.removeFavorite("pppjo")
-        favoriteCodes = {club.code for club in retrievedUser.favorite_clubs}
+        db.session.commit()
+        favoriteCodes = {club.code for club in retrievedUser.favoriteClubs}
         assert favoriteCodes == {"locustlabs", "penn-memes"}

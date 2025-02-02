@@ -52,22 +52,25 @@ pytest
 ## Model Decision Justification:
 
 Tag Model fields:
-Name (STR0)
+Name (str): needed for identification
+Clubs (relationship with Club): this makes it a lot easier to keep track of tags and allows for there to be mutability when it comes to tag-model relations, something I was struggling for a bit
 
 Club Model fields:
-Name (STR): Useful for filtering obv but also remembered to make this not the primary so we can change it
-Code(STR): Useful for filtering, core behind the relatio
-Description(STR): Given, useful for filtering
-MemberCount (INT): Allows for us to display the membersize for certain clubs. Given that our old data starsts
-UndergraduatesAllowed (BOOL): Useful for future registration
-GraduatesAllowed(BOOL): Useful for future registration
+Name (str): acts as the primary key and is an obvious 
+Code(str): acts as the primary key and is useful for filtering. I made sure to never add a function that changes the code
+Description(str): useful for displaying
+MemberCount (int): allows for us to display the membersize for certain clubs, which comes in handy for filtering and ranking clubs
+UndergraduatesAllowed (bool): just a cheap datapoint that will come in handy if I wanted to replicate something more advanced like signups
+GraduatesAllowed(bool): just a cheap datapoint that will come in handy if I wanted to replicate something more advanced like signups
+Tags (relationship with Tag): this makes it super convenient to keep track of which tags each club has
+UsersFavorited (relationship with UsersFavorited): this makes it super convenient to keep track of which people are interested in each club 
 
 User Model fields:
 Name (STR): Useful for recognition
 Email (STR): Useful for future features (such as club application openings or updates)
 
 
-## current thoughts:
+## coding thoughts:
 
 11:12 PM
 
@@ -163,13 +166,19 @@ post-nap goals:
 4. writeup the 3 writeup answers
 5. see if there are faster search methods out there
 
-10:00 AM
+10:00 AM (little 4 hour nap)
 
 1. I need to first make sure every function actually works like its supposed to, so postman time!
 2. testing-wise, everything except createClub has worked. i think to fix createClub route I just need change with model method it uses
 3. i fixed all my routes now it's time to do some i/o checking
-4. get rid of all my db.session.commits to improve backend performance, i'm calling it like 7 times one function
-5. 
+4. my db.session.commits() are super messy but getting rid of them breaks some stuff so whatever
+5. ok my test_models class now doesn't work but that's fine since I was relying on it to test when I didn't have postman
+
+10:56 AM
+
+1. might finally be time to start doing the writeup and justify a bunch of decisions
+2. there's lwk a lot of stuff I'll put that somewhere else in my document
+3. writeup long but interesting
 
 woke up
 
