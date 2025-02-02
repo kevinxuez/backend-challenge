@@ -18,13 +18,7 @@ def load_data():
         club_data = json.load(file)
         for club in club_data:
             Club.addClubToDB(Club.fromLegacyDBjson(club))
-        
-def display_clubs():
-    """Fetch all clubs and return them as a JSON response."""
-    with app.app_context():
-        clubs = Club.query.all()
-        club_list = [club.to_json() for club in clubs]  # Convert each club to JSON
-        return jsonify(club_list)  # Return the list as a JSON response
+
 
 # No need to modify the below code.
 if __name__ == "__main__":
@@ -37,5 +31,5 @@ if __name__ == "__main__":
         db.create_all()
         create_user()
         load_data()
-        display_clubs()
+        
 

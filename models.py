@@ -1,75 +1,125 @@
 from app import db
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import JSON
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Text, Integer, Boolean, CheckConstraint, Table, Column, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+club_tag_association = Table(
+    'club_tag_association',
+    db.metadata,
+    Column('club_code', String, ForeignKey('club.code'), primary_key=True),
+    Column('tag_name', String, ForeignKey('tag.name'), primary_key=True)  # Assuming you have a Tag model
+)
+
+user_club_association = Table(
+    'user_club_association',
+    db.metadata,  # Use your db's metadata
+    Column('user_username', String, ForeignKey('user.username'), primary_key=True),
+    Column('club_code', String, ForeignKey('club.code'), primary_key=True)
+)
+
+class Tag(db.Model):  # Define Tag Model
+    __tablename__ = 'tag'
+    name = mapped_column(String, primary_key=True)
+
+    clubs = relationship("Club", secondary=club_tag_association, back_populates="tags")
+
+    def __repr__(self):
+        return f"<Tag {self.name}>"
 
 
 class Club(db.Model):
-    code: Mapped[str] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column
-    description: Mapped[str]
-    tags: Mapped [set[str]] = mapped_column(JSON)
-    memberCount: Mapped[str]
-    undergraduatesAllowed: Mapped[bool]
-    graduatesAllowed: Mapped[bool]
+    __tablename__ = 'club'
+    code: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text)
+    memberCount: Mapped[int] = mapped_column(Integer)
+    undergraduatesAllowed: Mapped[bool] = mapped_column(Boolean)
+    graduatesAllowed: Mapped[bool] = mapped_column(Boolean)
+
+    __table_args__ = (
+        CheckConstraint('memberCount >= 0', name="Positive member count"),
+        CheckConstraint('LENGTH(name) >= 3', name="No short name length"),
+        CheckConstraint('undergraduatesAllowed OR graduatesAllowed', name='check_at_least_one_student_type_allowed')
+    )
     
-    def typeOfStudentAllowedAnalysis(self, club_data: dict) -> dict:
-        ugAllowed = False
-        gAllowed = False
-        if "tags" in club_data and isinstance(club_data["tags"], set):
-            if "Undergraduate" in club_data["tags"]:
-                ugAllowed = True
-            if "Graduate" in club_data["tags"]:
-                gAllowed = True
-        club_data["undergraduatesAllowed"] = ugAllowed
-        club_data["graduatesAllowed"] = gAllowed
-        return club_data
-    
+    tags = relationship("Tag", secondary=club_tag_association, back_populates="clubs") # The relationship to tags
+
+        
     @classmethod
     def fromLegacyDBjson(cls,  json_data: dict):
-        initial_db = cls(
+        tagsList=json_data.get("tags", [])
+        ug_allowed = "Undergraduate" in tagsList
+        g_allowed = "Graduate" in tagsList
+        club = cls(
             code=json_data["code"],
             name=json_data["name"],
             description=json_data["description"],
-            tags=json_data.get("tags", []),
-            memberCount = json_data.get("memberCount", 0)
+            memberCount = json_data.get("memberCount", 0),
+            undergraduatesAllowed=ug_allowed,
+            graduatesAllowed=g_allowed
         )
-        return [cls.typeOfStudentAllowedAnalysis(club) for club in initial_db]
-    
+        for tag_name in tagsList:
+            tag = Tag.query.filter_by(name=tag_name).first()  
+            if tag:
+                club.tags.append(tag) 
+            else:
+                new_tag = Tag(name=tag_name)
+                db.session.add(new_tag)
+                db.session.commit()
+                club.tags.append(new_tag)
+        return club
+
     
     @classmethod
     def fromCurrentDb(cls, json_data: dict):
-        return cls(
+        tagsList=json_data.get("tags", []),
+        club = cls(
             code=json_data["code"],
             name=json_data["name"],
             description=json_data["description"],
-            tags=json_data.get("tags", []),
             memberCount = json_data.get("memberCount", 0),
             undergraduatesAllowed = json_data.get["undergraduatesAllowed"],
             graduatesAllowed = json_data.get["graduatesAllowed"] 
         )
+        
+        for tag_name in tagsList:
+            tag = Tag.query.filter_by(name=tag_name).first()  
+            if tag:
+                club.tags.append(tag) 
+            else:
+                new_tag = Tag(name=tag_name)
+                db.session.add(new_tag)
+                db.session.commit()
+                club.tags.append(new_tag)
+        return club
+    
+    
         
     @classmethod
     def createNewClub(cls, 
                       code:str, 
                       name:str, 
                       description:str, 
-                      tags:set[str], 
+                      tags:list[str], 
                       memberCount:int, 
                       undergraduatesAllowed:bool, 
                       graduatesAllowed:bool):
-        return  cls(
+        club =   cls(
             code=code,
             name=name,
             description=description,
-            tags=tags,
             memberCount=memberCount,
             undergraduatesAllowed=undergraduatesAllowed,
             graduatesAllowed=graduatesAllowed
         )
+        for tag_name in tags:  # tags is now a set of tag *names*
+            tag = Tag.query.filter_by(name=tag_name).first()
+            if tag:
+                club.tags.append(tag)
+            else: # If the tag does not exist create it.
+                new_tag = Tag(name=tag_name)
+                db.session.add(new_tag)
+                db.session.commit()
+                club.tags.append(new_tag)
 
     
     @classmethod
@@ -79,13 +129,12 @@ class Club(db.Model):
             db.session.commit()
             return addedClub
     
-    
     def to_json(self) -> dict:
         return {
             "code": self.code,
             "name": self.name,
             "description": self.description,
-            "tags": self.tags,
+            "tags": [tag.name for tag in self.tags],
             "memberCount": self.memberCount,
             "undergraduatesAllowed": self.undergraduatesAllowed,
             "graduatesAllowed": self.graduatesAllowed
@@ -100,7 +149,15 @@ class Club(db.Model):
         db.session.commit()
 
     def addTag(self, newTag: str):
-        self.tags.add(newTag)
+        tag = Tag.query.filter_by(name=newTag).first()
+        if tag:
+            self.tags.append(tag)
+            db.session.commit()
+        else:
+            new_tag = Tag(name=newTag)
+            db.session.add(new_tag)
+            db.session.commit()
+            self.tags.append(new_tag)
         db.session.commit()
         
     def removeTag(self, removedTag:str) -> str:
@@ -112,7 +169,6 @@ class Club(db.Model):
         x = self.memberCount = newCount
         db.session.commit()
         return x
-
 
     def updateUndergraduatesAllowed(self, newStatus: bool):
         self.undergraduatesAllowed = newStatus
@@ -129,41 +185,49 @@ class Club(db.Model):
         else:
             self.tags.remove("Graduate")
         db.session.commit()
-    
         
+    def __repr__(self):
+        return f"<Tag {self.name}>"
+    
+    
+    
         
         
         
 class User(db.Model):
-    username: Mapped[str] = mapped_column(primary_key=True)
-    email: Mapped[str]
-    favorites: Mapped [set[str]] = mapped_column(JSON)
-    
+    __tablename__ = 'user' # Explicitly set tablename
+    username: Mapped[str] = mapped_column(String, primary_key=True)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+
+    favorite_clubs = relationship("Club", secondary=user_club_association, back_populates="clubs_favorited")
+
     @classmethod
     def createNewUser(cls, 
-                  username: str,
-                  email: str,
-                  favorites: set[str]
-                  ):
+                      username: str,
+                      email: str,
+                      favorites: set[str]
+                      ):
         return cls(
-        username = username,
-        email = email,
-        favorites = favorites)
-    
+            username=username,
+            email=email,
+            favorites=MutableSet(favorites)
+        )
+
     @classmethod
     def addUserToDb(cls, newUser):
         if isinstance(newUser, User):
+            newUser.favorites = list(newUser.favorites)  # Ensure it's serializable
             db.session.add(newUser)
-            db.session.commit
+            db.session.commit()
             return newUser
-    
+
     def to_json(self) -> dict:
         return {
             "username": self.username,
             "email": self.email,
-            "favorites": self.favorites,
+            "favorites": list(self.favorites),  # Convert set to list for JSON serialization
         }
-        
+
     def updateEmail(self, newEmail: str):
         self.email = newEmail
         db.session.commit()
@@ -173,19 +237,19 @@ class User(db.Model):
         db.session.commit()
 
     def removeFavorite(self, removedFavorite: str) -> str:
-        try:
+        if removedFavorite in self.favorites:
             self.favorites.remove(removedFavorite)
             db.session.commit()
-        except KeyError:  
-            print(f"Error: {removedFavorite} not found in favorites.")
-        return removedFavorite
+            return removedFavorite
+        else:
+            return "Favorite not found"
 
     def updateUsername(self, newUsername: str):
         self.username = newUsername
         db.session.commit()
-        
-        
-        
+
+    def __repr__(self):
+        return f"<User {self.username}>"
     
         
     

@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from models import *
+import json
 
 DB_FILE = "clubreview.db"
 
@@ -14,14 +14,10 @@ from models import *
 @app.route("/")
 def main():
     return "Welcome to Penn Club Review!"
-  
-
-
-
 
 @app.route("/api")
 def api():
-    return jsonify({"message": "Welcome to the Penn Club Review API!."})
+    return jsonify("hi")
 
 
 if __name__ == "__main__":
