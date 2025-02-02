@@ -18,7 +18,7 @@ def loadData():
     with open("clubs.json", "r") as file:
         clubData = json.load(file)
         for club in clubData:
-            Club.addClubToDB(Club.fromLegacyDBjson(club))
+            Club.addClubToDb(Club.fromLegacyDbJson(club))
     db.session.commit()
 
 if __name__ == "__main__":

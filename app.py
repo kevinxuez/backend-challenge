@@ -74,7 +74,25 @@ def createClub():
     """
     data = request.get_json()
     if not data:
-        return jsonify({"error": "No input data provided"}), 400
+        return errorResponse("No input data provided")
+    try:
+        tags = set(data.get("tags", []))
+        club = Club.createNewClub(
+            code=data["code"],
+            name=data["name"],
+            description=data["description"],
+            tags=tags,
+            memberCount=data.get("memberCount", 0),
+            undergraduatesAllowed=data["undergraduatesAllowed"],
+            graduatesAllowed=data["graduatesAllowed"]
+        )
+        Club.addClubToDb(club)
+        error = commitChanges()
+        if error:
+            return error
+        return jsonify(club.toJson()), 201        
+    except Exception as e:
+        return errorResponse(str(e))
 
 @app.route("/api/clubs/<clubCode>", methods=["PUT"])
 def updateClub(clubCode):

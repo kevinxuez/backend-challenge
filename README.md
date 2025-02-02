@@ -49,7 +49,7 @@ pytest
 
 
 
-Model Decision Justification:
+## Model Decision Justification:
 
 Tag Model fields:
 Name (STR0)
@@ -67,9 +67,8 @@ Name (STR): Useful for recognition
 Email (STR): Useful for future features (such as club application openings or updates)
 
 
+## current thoughts:
 
-
-current thoughts:
 11:12 PM
 
 0. wait i forgot to push any of these git changes
@@ -164,7 +163,15 @@ post-nap goals:
 4. writeup the 3 writeup answers
 5. see if there are faster search methods out there
 
+10:00 AM
 
+1. I need to first make sure every function actually works like its supposed to, so postman time!
+2. testing-wise, everything except createClub has worked. i think to fix createClub route I just need change with model method it uses
+3. i fixed all my routes now it's time to do some i/o checking
+4. get rid of all my db.session.commits to improve backend performance, i'm calling it like 7 times one function
+5. 
+
+woke up
 
 
 
