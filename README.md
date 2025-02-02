@@ -71,9 +71,12 @@ Email (STR): Useful for future features (such as club application openings or up
 
 current thoughts:
 11:12 PM
+
 0. wait i forgot to push any of these git changes
+1. i've been generally working for like 40 minutes before this
 
 11:37 PM
+
 0. let's polish up steps 1-3 before i even do any api work
 1. ran throgh all my models.py and changed them back to python types that are mapped to a SQL types, misread the documentation and didn't map them to SQL types
 2. added some basic CheckConstraints to practice with them and get some more data, will add some more when I add the functions
@@ -82,6 +85,7 @@ current thoughts:
 5. why is running "poetry shell" giving me this bs "The command "shell" does not exist."
 
 11:51
+
 0. wait ok so I have poetry installed and i'm in the powershell state but not in the poetry shell state
 1. I had to visit chatgpt for this one LOL its telling my environmental variable changing is the answer which is not GOOD
 2. wait i had the pyproject.toml in my directory the entire time and I actually was in poetry, the issue was just that running poetry shell inside a poetry shell doesn't tell you you're in one but instead just breaks
@@ -91,12 +95,14 @@ current thoughts:
 6. oh wait, pytest in vscode is ran using test CheckConstraints
 
 12:17
+
 0. got sucked back into the poetry shell just to search ts up on reddit and find that they updated it like a month ago to be a plugin
 1. wait literally all of my issues were because the poetry devs completely changed how poetry shell works to some random plugin holy 
 2. tests done i love life
 3. adding more tests because cis 1210 trauma
 
 12:46
+
 0. let's finish up testing my add/minus/update/modify features and then we can safely use them with APIs
 1. my add's for favorites+lists were both cooked
 2. bro there was a mutableList that I could have used the whole time no wonder this makes a lot more sense now
@@ -105,11 +111,13 @@ current thoughts:
 5. yo i hate mutablelist bs lemme just switch to mutableSet because there's also faster search runtime 
 
 1:30
+
 0. took a small break and then fixed everything to be mutableSet
 1. ok might FINALLY be time to work on the APIS holy 
 2. wait no this mutable stuff still doesn't wrok LOL
 
 2:00
+
 0. stuck on mutability LOL
 1. no more mutableSet let's try the relationship route
 2. relationships seem to work a lot better then mutableSet so that's a good STRING
@@ -118,6 +126,7 @@ current thoughts:
 5. oh my god i have to rework the tests too LOL
 
 3:00
+
 0. monster caffeine is actually so clutch
 1. OK FINISHED OUT ALL THE KINKS AND BUGS IN THE RELATIONSHIP Model
 2. I'm going to now develop the APIs then go back to adding features and bad-input catchers to the model functions
@@ -126,6 +135,7 @@ current thoughts:
 5. i fell asleep that was really annoying
 
 4:00
+
 0. i need to remove all the db.session.commits in my model for better performance
 1. let me look for the most efficient wway to do the search method
 2. graduatses are actually trolling my code holy moly
@@ -134,6 +144,7 @@ current thoughts:
 5. i can do all my pure justification after i've started docStringing
 
 5:00
+
 0. bro imma go to sleep 
 1. lemme use chatgpt to quickly format my stuff such that i have docstrings and a set charcter limit
 2. "Hello Chatgpt
@@ -143,13 +154,16 @@ second, give every function a formatted docstring where
    and all the docstring text is one indent right of the funciton definition
 third, reformat it such that the character limit is 80 characters" yo wait this is actually really nice
 3. sleep!!!!
+4. in total took me like 6 hours but i might do more tmr
 
 post-nap goals:
+
 1. actually writeup some stuff to justify my decision making 
 2. add some more info to some of the docstrings that have additional info
 3. deal with some of the bad input cases if i have time
 4. writeup the 3 writeup answers
 5. see if there are faster search methods out there
+
 
 
 
