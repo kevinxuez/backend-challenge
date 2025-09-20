@@ -51,13 +51,13 @@ pytest
 Honestly, this project was a lot of fun to make and get me locked back into the second semester. I really enjoyed setting up my model and seeing my API work actually come to life. 
 The biggest pain points for me was just the procrastination (5AM work!) and getting to work the relationship between some of the datapoints. As you can see in my "Coding Thoughts" page, I tried to use mutableSet for like 3 hours and it was a little frustrating. Otherwise though, it was a lot of fun and I hope to meet some more of you guys.
 
-## Future Improvements:
+## Future Improvements (1):
 
-1. Heavily improve performance by finding out where I can remove DB.session.commit(). I did not want to run through my code in the last hour to find exactly where I can remove it so I got lazy. There's a lot of places in model.py I can definite remove the commit() because I have a whole commit API function to serve as the commiter
-2. Refactor my User() model to have an ID as the primary key such that the Username just becomes a unique thing. This way, the username can get easily changed and it would improve convenience
-3. Add dateTime to my Club() model. This way, there exists another way to sort clubs when looking for something to review
+1. Heavily improve performance by finding out where I can remove DB.session.commit(). I did not want to run through my code in the last hour to find exactly where I can remove it so I got lazy. There's a lot of places in model.py I can definite remove the commit() because I have a whole commit API function to serve as the commiter FIXED
+2. Refactor my User() model to have an ID as the primary key such that the Username just becomes a unique thing. This way, the username can get easily changed and it would improve convenience FIXED
+3. Add dateTime to my Club() model. This way, there exists another way to sort clubs when looking for something to review FIXED
 4. Redo my encapsulation work: I was kind of lazy for this and just decided to not create getFunctions. My issue is I forgot know how to encapsulate fields/sqlAlchemy code, so I wasn't sure if it was worth the time to do it. Going back to do it now would be really good for both code future readability and security
-5. Add some more bad I/O catchers. As you can see in my docstrings for models.py, there exists so many types of bad input that I don't really attempt to catch outside of some basic error calling in app.py. 
+5. Add some more bad I/O catchers. As you can see in my docstrings for models.py, there exists so many types of bad input that I don't really attempt to catch outside of some basic error calling in app.py.  FIXED
 
 
 ## API Decision Justification:
@@ -109,7 +109,10 @@ OLD:
 3. Added docstrings to all functions, refactored duplicate code into helper methods (errorResponse, getOr404, listToJson, commitChanges), and performed extensive API testing via Postman to ensure all endpoints work correctly.
 
 NEW: 
+
+1.
  Removed duplicate code into helper methods (errorResponse, getOr404, listToJson, commitChanges), and performed extensive API testing via Postman to ensure all endpoints work correctly.
  Added a user_id primary key to the User() model for better database practices and enable username changes and duplicate usernames
  Added a datetimeCreated field to Club() model to enable sorting by creation time.
 
+2. 

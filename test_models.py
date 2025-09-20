@@ -2,6 +2,7 @@ import pytest
 from app import app, db
 from models import Club, User
 from bootstrap import create_user, load_data
+from validation import ValidationError
 
 @pytest.fixture(scope="function")
 def testClient():
@@ -24,7 +25,7 @@ def testDataLoading(testClient):
     with app.app_context():
         load_data()
         create_user()
-        db.session.commit()  # Explicitly commit after loading data
+        db.session.commit()
         josh = User.query.filter_by(username="Josh").first()
         assert josh is not None
         assert josh.email == "josh@upenn.edu"
@@ -38,7 +39,7 @@ def testClubLoading(testClient):
     """
     with app.app_context():
         load_data()
-        db.session.commit()  # Commit after loading
+        db.session.commit()
         pppjo = Club.query.filter_by(code="pppjo").first()
         assert pppjo is not None
         assert pppjo.name == (
@@ -62,7 +63,7 @@ def testLegacyDataLoading(testClient):
     """
     with app.app_context():
         load_data()
-        db.session.commit()  # Commit after loading
+        db.session.commit()
         pppjo = Club.query.filter_by(code="pppjo").first()
         assert pppjo is not None
         assert pppjo.name == (
@@ -99,12 +100,12 @@ def testUserWithLegacyFavorites(testClient):
     """
     with app.app_context():
         load_data()
-        db.session.commit()  # Commit loaded data first
+        db.session.commit()
         
         user = User.createNewUser(
             "legacyUser", "legacy@example.com", {"pppjo", "locustlabs"}
         )
-        User.addUserToDb(user)  # This method still commits internally
+        User.addUserToDb(user)
         
         retrievedUser = User.query.filter_by(
             username="legacyUser"
@@ -114,11 +115,122 @@ def testUserWithLegacyFavorites(testClient):
         assert favoriteCodes == {"pppjo", "locustlabs"}
         
         retrievedUser.addFavorite("penn-memes")
-        db.session.commit()  # Manually commit changes
+        db.session.commit()
         favoriteCodes = {club.code for club in retrievedUser.favoriteClubs}
         assert favoriteCodes == {"pppjo", "locustlabs", "penn-memes"}
         
         retrievedUser.removeFavorite("pppjo")
-        db.session.commit()  # Manually commit changes
+        db.session.commit()
         favoriteCodes = {club.code for club in retrievedUser.favoriteClubs}
         assert favoriteCodes == {"locustlabs", "penn-memes"}
+
+
+def test_club_validation_errors(testClient):
+    """Test that Club creation fails with invalid input."""
+    with app.app_context():
+        # Empty club code
+        with pytest.raises(ValueError):
+            Club.createNewClub("", "Valid Club Name", "Valid description that is long enough", set(), 0, True, False)
+        
+        # Short club name
+        with pytest.raises(ValueError):
+            Club.createNewClub("code", "ab", "Valid description that is long enough", set(), 0, True, False)
+        
+        # Short description
+        with pytest.raises(ValueError):
+            Club.createNewClub("code", "Valid Name", "short", set(), 0, True, False)
+        
+        # Negative member count
+        with pytest.raises(ValueError):
+            Club.createNewClub("code", "Valid Name", "Valid description that is long enough", set(), -1, True, False)
+        
+        # Neither undergrad nor grad allowed
+        with pytest.raises(ValueError):
+            Club.createNewClub("code", "Valid Name", "Valid description that is long enough", set(), 0, False, False)
+
+
+def test_user_validation_errors(testClient):
+    """Test that User creation fails with invalid input."""
+    with app.app_context():
+        # Short username
+        with pytest.raises(ValueError):
+            User.createNewUser("ab", "email@test.com", set())
+        
+        # Invalid email
+        with pytest.raises(ValueError):
+            User.createNewUser("username", "invalid-email", set())
+        
+        # Non-existent favorite club
+        with pytest.raises(ValueError):
+            User.createNewUser("username", "email@test.com", {"nonexistent-club"})
+
+
+def test_club_update_validation(testClient):
+    """Test club update methods with validation."""
+    with app.app_context():
+        load_data()
+        db.session.commit()
+        
+        club = Club.query.filter_by(code="pppjo").first()
+        assert club is not None
+        
+        # Valid updates should work
+        club.updateName("New Valid Club Name")
+        assert club.name == "New Valid Club Name"
+        
+        club.updateMemberCount(100)
+        assert club.memberCount == 100
+        
+        # Invalid updates should fail
+        with pytest.raises(ValueError):
+            club.updateName("ab")  # Too short
+        
+        with pytest.raises(ValueError):
+            club.updateMemberCount(-1)  # Negative
+
+
+def test_user_update_validation(testClient):
+    """Test user update methods with validation."""
+    with app.app_context():
+        load_data()
+        create_user()
+        db.session.commit()
+        
+        user = User.query.filter_by(username="Josh").first()
+        assert user is not None
+        
+        # Valid updates should work
+        user.updateEmail("newemail@test.com")
+        assert user.email == "newemail@test.com"
+        
+        user.updateUsername("NewUsername")
+        assert user.username == "NewUsername"
+        
+        # Invalid updates should fail
+        with pytest.raises(ValueError):
+            user.updateEmail("invalid-email")
+        
+        with pytest.raises(ValueError):
+            user.updateUsername("ab")  # Too short
+
+
+def test_duplicate_prevention(testClient):
+    """Test that duplicates are prevented."""
+    with app.app_context():
+        load_data()
+        db.session.commit()
+        
+        # Duplicate club code should fail
+        with pytest.raises(ValueError):
+            Club.createNewClub("pppjo", "New Club", "Valid description that is long enough", set(), 0, True, False)
+        
+        # Duplicate username should fail
+        user1 = User.createNewUser("testuser", "test1@test.com", set())
+        User.addUserToDb(user1)
+        
+        with pytest.raises(ValueError):
+            User.createNewUser("testuser", "test2@test.com", set())
+        
+        # Duplicate email should fail
+        with pytest.raises(ValueError):
+            User.createNewUser("testuser2", "test1@test.com", set())

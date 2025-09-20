@@ -3,3 +3,7 @@ Pipfile.lock
 *.log
 *.db
 __pycache__
+BACKEND_ENHANCEMENT_PLAN.txt
+DIRECTORY_RESTRUCTURE_GUIDE.txt
+IMPROVEMENT_PLAN.md
+INPUTCHANGE.txt
