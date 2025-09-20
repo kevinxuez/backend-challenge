@@ -1,14 +1,11 @@
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from flask import request, jsonify
+from .database import create_app, db, DB_FILE
+from .models import *
+from .validation import ValidationError, validate_json_input, validate_club_code, validate_tags, sanitize_html, validate_string
 
-DB_FILE = "clubreview.db"
-
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_FILE}"
-db = SQLAlchemy(app)
-
-from models import *
-from validation import ValidationError, validate_json_input, validate_club_code, validate_tags, sanitize_html
+# Create app and initialize database
+app = create_app()
+db.init_app(app)
 
 def errorResponse(message, status=400):
     """Return a JSON error response.

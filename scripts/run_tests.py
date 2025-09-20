@@ -31,14 +31,17 @@ def main():
     print("Flask Club Review Application - Test Suite Runner")
     print("=" * 60)
     
-    # Change to the script's directory
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    # Change to the project root directory
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(project_root)
     
+    # Updated test commands for new structure
     tests = [
-        ("python -m pytest test_validation.py -v", "Validation Tests"),
-        ("python -m pytest test_models.py -v", "Model Tests"),
-        ("python -m pytest test_apis.py -v", "API Validation Tests"),
-        ("python -m pytest -v", "All Tests Combined")
+        ("python -m pytest tests/test_validation.py -v", "Validation Tests"),
+        ("python -m pytest tests/test_models.py -v", "Model Tests"),
+        ("python -m pytest tests/test_apis.py", "API functionality tests"),
+        ("python -m pytest tests/test_api_validation.py -v", "API I/O Tests"),
+        ("python -m pytest tests/ -v", "All Tests Combined")
     ]
     
     results = []
@@ -67,6 +70,7 @@ def main():
     print(f"{'='*60}")
     
     try:
+        sys.path.insert(0, 'src')
         from validation import validate_string, validate_email, validate_club_code
         print("✓ Validation module imported successfully")
         

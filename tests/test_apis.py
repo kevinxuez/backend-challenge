@@ -1,7 +1,7 @@
 import pytest
-from app import app, db
-from models import Club, User
-from bootstrap import create_user, load_data
+from src.app import app, db
+from src.models import Club, User
+from scripts.bootstrap import create_user, load_data
 import json
 
 @pytest.fixture(scope="function")

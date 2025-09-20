@@ -1,5 +1,10 @@
 import pytest
-from validation import *
+import sys
+import os
+
+# Add the src directory to the Python path
+
+from src.validation import *
 
 
 def test_string_validation():

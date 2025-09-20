@@ -1,9 +1,9 @@
-from app import db
+from .database import db
 from datetime import datetime
 from sqlalchemy import String, Text, Integer, Boolean, CheckConstraint, Table, Column, \
     ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from validation import (validate_string, validate_integer, validate_boolean, 
+from .validation import (validate_string, validate_integer, validate_boolean, 
                        validate_club_code, validate_tags, validate_email, sanitize_html)
 
 clubTagAssociation = Table(

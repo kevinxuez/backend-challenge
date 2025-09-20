@@ -1,8 +1,12 @@
 import pytest
-from app import app, db
-from models import Club, User
-from bootstrap import create_user, load_data
-from validation import ValidationError
+import sys
+import os
+
+# Add the src and scripts directories to the Python path
+
+from src.app import app, db
+from src.models import Club, User
+from scripts.bootstrap import create_user, load_data
 
 @pytest.fixture(scope="function")
 def testClient():
@@ -13,6 +17,9 @@ def testClient():
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     with app.app_context():
         db.create_all()
+        # Load data once for all tests
+        load_data()
+        db.session.commit()
         yield app.test_client()
         db.session.remove()
         db.drop_all()
@@ -23,7 +30,6 @@ def testDataLoading(testClient):
     (return) None
     """
     with app.app_context():
-        load_data()
         create_user()
         db.session.commit()
         josh = User.query.filter_by(username="Josh").first()
@@ -38,8 +44,6 @@ def testClubLoading(testClient):
     (return) None
     """
     with app.app_context():
-        load_data()
-        db.session.commit()
         pppjo = Club.query.filter_by(code="pppjo").first()
         assert pppjo is not None
         assert pppjo.name == (
@@ -62,8 +66,6 @@ def testLegacyDataLoading(testClient):
     (return) None
     """
     with app.app_context():
-        load_data()
-        db.session.commit()
         pppjo = Club.query.filter_by(code="pppjo").first()
         assert pppjo is not None
         assert pppjo.name == (
@@ -99,9 +101,6 @@ def testUserWithLegacyFavorites(testClient):
     (return) None
     """
     with app.app_context():
-        load_data()
-        db.session.commit()
-        
         user = User.createNewUser(
             "legacyUser", "legacy@example.com", {"pppjo", "locustlabs"}
         )
@@ -168,9 +167,6 @@ def test_user_validation_errors(testClient):
 def test_club_update_validation(testClient):
     """Test club update methods with validation."""
     with app.app_context():
-        load_data()
-        db.session.commit()
-        
         club = Club.query.filter_by(code="pppjo").first()
         assert club is not None
         
@@ -192,7 +188,6 @@ def test_club_update_validation(testClient):
 def test_user_update_validation(testClient):
     """Test user update methods with validation."""
     with app.app_context():
-        load_data()
         create_user()
         db.session.commit()
         
@@ -217,9 +212,6 @@ def test_user_update_validation(testClient):
 def test_duplicate_prevention(testClient):
     """Test that duplicates are prevented."""
     with app.app_context():
-        load_data()
-        db.session.commit()
-        
         # Duplicate club code should fail
         with pytest.raises(ValueError):
             Club.createNewClub("pppjo", "New Club", "Valid description that is long enough", set(), 0, True, False)

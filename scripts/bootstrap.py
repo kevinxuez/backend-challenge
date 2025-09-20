@@ -1,7 +1,13 @@
 import os
+import sys
 import json
-from app import app, db, DB_FILE
-from models import Club, User
+
+# Add the src directory to the Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from src.app import app
+from src.database import db, DB_FILE
+from src.models import Club, User
 
 def create_user():
     """Create a new user with preset favorite clubs.
@@ -15,7 +21,9 @@ def load_data():
     """Load club data from 'clubs.json' and add to the database.
     (return) None
     """
-    with open("clubs.json", "r") as file:
+    # Path from scripts directory to data directory
+    data_path = os.path.join(os.path.dirname(__file__), "..", "data", "clubs.json")
+    with open(data_path, "r") as file:
         clubData = json.load(file)
         for club in clubData:
             Club.addClubToDb(Club.fromLegacyDbJson(club))
@@ -27,5 +35,5 @@ if __name__ == "__main__":
         os.remove(localDbFile)
     with app.app_context():
         db.create_all()
-        create_user()
-        load_data()
+        load_data()  # Load clubs first
+        create_user()  # Then create user with favorites

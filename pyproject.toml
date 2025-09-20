@@ -2,8 +2,9 @@
 name = "backend-challenge"
 version = "0.1.0"
 description = "Backend Challenge for Penn Labs"
-authors = ["Christopher Liu <liuchris@seas.upenn.edu>"]
+authors = ["Kevin Xue <kevinxue@seas.upenn.edu>"]
 readme = "README.md"
+packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -20,3 +21,7 @@ black = "^23.12.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_paths = ["src"]
