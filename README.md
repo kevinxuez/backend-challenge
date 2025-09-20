@@ -61,8 +61,12 @@ When it comes to new features, the main thing I added was a review system that a
 ## Future Improvements (1):
 
 1 - Commenting System: Implement an actual commenting system to my reviews, now that I've already made a review system
+
 2 - History/Versioning: Implement a history/versioning system for clubs and reviews so that users can see how things have changed over time
+
 3 - Likes/Upvotes: Implement a like/upvote system for reviews and comments to allow users to show appreciation for helpful content
+
+4 - File Separation: App/Model are both 600+ line files that could be separated or refactored into their respective models/routes files so that each file is smaller and easier to manage.
 
 ## API Decision Justification:
 
