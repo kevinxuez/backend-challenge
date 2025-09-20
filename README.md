@@ -131,19 +131,10 @@ OLD:
 
 NEW: 
 
-1.
- Removed duplicate code into helper methods (errorResponse, getOr404, listToJson, commitChanges), and performed extensive API testing via Postman to ensure all endpoints work correctly.
- Added a user_id primary key to the User() model for better database practices and enable username changes and duplicate usernames
- Added a datetimeCreated field to Club() model to enable sorting by creation time.
-
-2. 
-Added I/O validation to API endpoints to catch bad input data and return appropriate error messages.
-Added I/O validation to model methods to ensure data integrity at the model level.
-Wrote additional pytest tests to cover new validation logic and edge cases.
-
-3. 
-Refactored file structure and improved encapsulation by adding getter methods to models.
-Reviewed and cleaned up code for readability and maintainability.
-
-4. 
-Added a fully functional review system with a Review() model, API endpoints for creating and retrieving reviews, and integration with the Club() and User() models.
+1. Removed duplicate code into helper methods (errorResponse, getOr404, listToJson, commitChanges), and performed extensive API testing via Postman to ensure all endpoints work correctly.
+2. Added a user_id primary key to the User() model for better database practices and enable username changes and duplicate usernames. Then also added a datetimeCreated field to Club() model to enable sorting by creation time.
+3. Added I/O validation to API endpoints to catch bad input data and return appropriate error messages.
+4. Added I/O validation to model methods to ensure data integrity at the model level.
+5. Refactored file structure and improved encapsulation by adding getter methods to models.
+6. Wrote proper tests for all new functionality, including validation tests and review system tests.
+7. Added a fully functional review system with a Review() model, API endpoints for creating and retrieving reviews, and integration with the Club() and User() models.

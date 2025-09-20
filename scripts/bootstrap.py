@@ -61,6 +61,6 @@ if __name__ == "__main__":
         os.remove(localDbFile)
     with app.app_context():
         db.create_all()
-        load_data()  # Load clubs first
-        create_user()  # Then create user with favorites
-        create_sample_reviews()  # Finally add sample reviews
+        load_data()  
+        create_user()  
+        create_sample_reviews() 
