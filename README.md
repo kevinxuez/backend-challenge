@@ -21,7 +21,13 @@ Fill out this section as you complete the challenge!
 - `models.py`: Model definitions for SQLAlchemy database models. Check out documentation on [declaring models](https://flask-sqlalchemy.palletsprojects.com/en/2.x/models/) as well as the [SQLAlchemy quickstart](https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/#quickstart) for guidance
 - `bootstrap.py`: Code for creating and populating your local database. You will be adding code in this file to load the provided `clubs.json` file into a database.
 
+(NEW)
+
+- `validation.py`: Standard validation error class and input validation functions 
+
 ## Developing
+
+(I edited the file structure so running the app is a little different)
 
 0. Determine how to model the data contained within `clubs.json` and then complete `bootstrap.py`
 1. Activate the Poetry shell with `poetry shell`.
@@ -54,45 +60,63 @@ When it comes to new features, the main thing I added was a review system that a
 
 ## Future Improvements (1):
 
-
-
+1 - Commenting System: Implement an actual commenting system to my reviews, now that I've already made a review system
+2 - History/Versioning: Implement a history/versioning system for clubs and reviews so that users can see how things have changed over time
+3 - Likes/Upvotes: Implement a like/upvote system for reviews and comments to allow users to show appreciation for helpful content
 
 ## API Decision Justification:
 
-errorResponse, getOr404, listToJson, and commitChanges: These functions were just results of me looking through my API code and seeing a bunch of duplicate stuff so I decided to refactorize it to make it look better
+**Helper Functions Design:**
+- `errorResponse()`: Standardized error handling makes respond to errors consistent
+- `getOr404()`: Allows for a cleaner way to handle errors when qurying the database
+- `listToJson()`: Centralizes JSON serialization for collections
+- `commitChanges()`: Wraps database commits with proper exception handling and rollback functionality, allowing everybody to view changes
 
-API/Search: I ultimately decided on using "ilike" because I'm not familiar enough to find faster methods so I decided to go with the seemingly-most trusted option possible
+**Search Implementation:**
+- Used SQLAlchemy's `ilike()` for case-insensitive search club names and descriptions
+- Chose database-level filtering over application-level filtering for better performance with larger datasets
+
+**RESTful Endpoint Design:**
+- Followed REST conventions: GET for retrieval, POST for creation, PUT for updates, DELETE for removal
+- Used descriptive URL patterns (`/api/clubs/<code>`, `/api/users/<id>/reviews`) for intuitive navigation
+
+**Review System Architecture:**
+- Designed nested endpoints (`/api/clubs/<code>/reviews`, `/api/users/<id>/reviews`) to reflect data relationships
+- Added statistics endpoints (`/api/clubs/<code>/reviews/stats`) for analytical capabilities
 
 ## Model Decision Justification:
 
-Tag Model fields:
-Name (str): needed for identification
+**Tag Model:**
+- `Name (str)`: Serves as the primary identifier for tag categorization and searching
+- `Clubs (relationship with Club)`: Implements a many-to-many relationship that provides flexibility for tag management and enables dynamic association between tags and clubs without data duplication
 
-Clubs (relationship with Club): this makes it a lot easier to keep track of tags and allows for there to be mutability when it comes to tag-model relations, something I was struggling for a bit
+**Club Model:**
+- `Name (str)`: Provides human-readable club identification for display purposes
+- `Code (str)`: Acts as the primary key and immutable identifier, ensuring consistent referencing across the application while remaining URL-friendly
+- `Description (str)`: Stores detailed club information for user discovery and decision-making
+- `MemberCount (int)`: Enables sorting, filtering, and ranking functionality based on club popularity and size
+- `UndergraduatesAllowed (bool)`: Provides eligibility filtering capability, designed for future enrollment system integration
+- `GraduatesAllowed (bool)`: Complements undergraduate eligibility, supporting comprehensive access control for different student populations
+- `Tags (relationship with Tag)`: Establishes many-to-many relationship for flexible categorization and advanced search functionality
+- `UsersFavorited (relationship with UsersFavorited)`: Tracks user preferences through a many-to-many relationship, enabling personalized recommendations and user engagement metrics
 
-Club Model fields:
-Name (str): acts as the primary key and is an obvious 
+**User Model:**
+- `Username (str)`: Originally designed as primary key for simplicity, though this creates limitations for username changes (noted for future refactoring)
+- `Email (str)`: Provides unique user identification alternative and enables future features like notifications, password recovery, and session management
+- `FavoritedClubs (relationship with clubs)`: Implements user preference tracking through many-to-many relationship, supporting personalized user experiences and club recommendation algorithms
 
-Code(str): acts as the primary key and is useful for filtering. I made sure to never add a function that changes the code
+**Review Model:**
+- `ID (int)`: Auto-incrementing primary key ensuring unique identification for each review
+- `User_ID (int)`: Foreign key establishing relationship with User model, enabling user-specific review tracking and management
+- `Club_Code (str)`: Foreign key linking to Club model, creating the core association between reviews and clubs
+- `Rating (int)`: Numerical rating (1-10) with database constraints for data integrity and analytical capabilities
+- `Title (str)`: Required review title (5-100 characters) providing quick review identification and searchability
+- `Text (str)`: Optional detailed review content (up to 2000 characters) allowing comprehensive user feedback
+- `Created_At (datetime)`: Timestamp tracking review creation for chronological ordering and audit trails
+- `Updated_At (datetime)`: Automatic timestamp updates for tracking review modifications and version control
+- `User (relationship)`: Back-reference to User model enabling efficient query navigation and user review aggregation
+- `Club (relationship)`: Back-reference to Club model supporting club review collections and rating calculations
 
-Description(str): useful for displaying
-
-MemberCount (int): allows for us to display the membersize for certain clubs, which comes in handy for filtering and ranking clubs
-
-UndergraduatesAllowed (bool): just a cheap datapoint that will come in handy if I wanted to replicate something more advanced like signups
-
-GraduatesAllowed(bool): just a cheap datapoint that will come in handy if I wanted to replicate something more advanced like signups
-
-Tags (relationship with Tag): this makes it super convenient to keep track of which tags each club has
-
-UsersFavorited (relationship with UsersFavorited): this makes it super convenient to keep track of which people are interested in each club 
-
-User Model fields:
-Username (str): acts as primary key, which is a flaw, and is not changeable
-
-Email (str): this will come in useful for either user identification/session stuff I make in the future or just for sending alerts and stuff
-
-FavoritedClubs(relationship with clubs): this ties a User to a bunch of clubs that way it can keep track of information like that
 
 
 ## Development Process:
@@ -122,4 +146,4 @@ Refactored file structure and improved encapsulation by adding getter methods to
 Reviewed and cleaned up code for readability and maintainability.
 
 4. 
-Added a fully functional review system
+Added a fully functional review system with a Review() model, API endpoints for creating and retrieving reviews, and integration with the Club() and User() models.
