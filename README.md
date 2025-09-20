@@ -91,124 +91,25 @@ Tags (relationship with Tag): this makes it super convenient to keep track of wh
 UsersFavorited (relationship with UsersFavorited): this makes it super convenient to keep track of which people are interested in each club 
 
 User Model fields:
-Name (str): acts as primary key, which is a flaw, and is not changeable
+Username (str): acts as primary key, which is a flaw, and is not changeable
 
 Email (str): this will come in useful for either user identification/session stuff I make in the future or just for sending alerts and stuff
 
 FavoritedClubs(relationship with clubs): this ties a User to a bunch of clubs that way it can keep track of information like that
 
 
-## coding thoughts:
+## Development Process:
 
-11:12 PM
+OLD:
 
-0. wait i forgot to push any of these git changes
-1. i've been generally working for like 40 minutes before this
+1. Started with SQLAlchemy model design, initially struggled with Poetry shell configuration and spent significant time debugging mutableSet/mutableList approaches before settling on SQLAlchemy relationships for better data handling.
 
-11:37 PM
+2. Implemented comprehensive pytest testing suite, then built Flask API endpoints with proper error handling and JSON serialization. Had to refactor several model methods to work seamlessly with the relationship-based approach.
 
-0. let's polish up steps 1-3 before i even do any api work
-1. ran throgh all my models.py and changed them back to python types that are mapped to a SQL types, misread the documentation and didn't map them to SQL types
-2. added some basic CheckConstraints to practice with them and get some more data, will add some more when I add the functions
-3. lemme go refresh on pytest and find how to test this program without postman, I'll do the postman testing later
-4. forgot to install pytest as a module
-5. why is running "poetry shell" giving me this bs "The command "shell" does not exist."
+3. Added docstrings to all functions, refactored duplicate code into helper methods (errorResponse, getOr404, listToJson, commitChanges), and performed extensive API testing via Postman to ensure all endpoints work correctly.
 
-11:51
-
-0. wait ok so I have poetry installed and i'm in the powershell state but not in the poetry shell state
-1. I had to visit chatgpt for this one LOL its telling my environmental variable changing is the answer which is not GOOD
-2. wait i had the pyproject.toml in my directory the entire time and I actually was in poetry, the issue was just that running poetry shell inside a poetry shell doesn't tell you you're in one but instead just breaks
-3. ok back to testing
-4. BRO I HAVE MATH 3140 HW DUE AT MIDNIGHT TODAY !!!!!!! TURN TS IN
-5. turned in, back to testing
-6. oh wait, pytest in vscode is ran using test CheckConstraints
-
-12:17
-
-0. got sucked back into the poetry shell just to search ts up on reddit and find that they updated it like a month ago to be a plugin
-1. wait literally all of my issues were because the poetry devs completely changed how poetry shell works to some random plugin holy 
-2. tests done i love life
-3. adding more tests because cis 1210 trauma
-
-12:46
-
-0. let's finish up testing my add/minus/update/modify features and then we can safely use them with APIs
-1. my add's for favorites+lists were both cooked
-2. bro there was a mutableList that I could have used the whole time no wonder this makes a lot more sense now
-3. have to account for keyerrors if the thing isn't there
-4. why df did I write JSON().with_variant(with_variant) for my list[str]
-5. yo i hate mutablelist bs lemme just switch to mutableSet because there's also faster search runtime 
-
-1:30
-
-0. took a small break and then fixed everything to be mutableSet
-1. ok might FINALLY be time to work on the APIS holy 
-2. wait no this mutable stuff still doesn't wrok LOL
-
-2:00
-
-0. stuck on mutability LOL
-1. no more mutableSet let's try the relationship route
-2. relationships seem to work a lot better then mutableSet so that's a good STRING
-3. my sleeps gonna get cooked when i have to actually implement these APIS
-4. currently reworking everything to fit the relationship, so adding tag stuff migth get miserable
-5. oh my god i have to rework the tests too LOL
-
-3:00
-
-0. monster caffeine is actually so clutch
-1. OK FINISHED OUT ALL THE KINKS AND BUGS IN THE RELATIONSHIP Model
-2. I'm going to now develop the APIs then go back to adding features and bad-input catchers to the model functions
-3. Cleaning up a lot of slop 
-4. ok it's time to run through most of the code
-5. i fell asleep that was really annoying
-
-4:00
-
-0. i need to remove all the db.session.commits in my model for better performance
-1. let me look for the most efficient wway to do the search method
-2. graduatses are actually trolling my code holy moly
-3. ok everything seems good time to go to sleep for a bit then wake up and polish
-4. ok time to docstring everything and then ill go to sleep, wake up in like 3-4 hours
-5. i can do all my pure justification after i've started docStringing
-
-5:00
-
-0. bro imma go to sleep 
-1. lemme use chatgpt to quickly format my stuff such that i have docstrings and a set charcter limit
-2. "Hello Chatgpt
-first, I prefer camelCase to any snake_case, so replace all of those
-second, give every function a formatted docstring where 
-   it's short (gives arg, any bad inputs, and returns) 
-   and all the docstring text is one indent right of the funciton definition
-third, reformat it such that the character limit is 80 characters" yo wait this is actually really nice
-3. sleep!!!!
-4. in total took me like 6 hours but i might do more tmr
-
-post-nap goals:
-
-1. actually writeup some stuff to justify my decision making 
-2. add some more info to some of the docstrings that have additional info
-3. deal with some of the bad input cases if i have time
-4. writeup the 3 writeup answers
-5. see if there are faster search methods out there
-
-10:00 AM (little 4 hour nap)
-
-1. I need to first make sure every function actually works like its supposed to, so postman time!
-2. testing-wise, everything except createClub has worked. i think to fix createClub route I just need change with model method it uses
-3. i fixed all my routes now it's time to do some i/o checking
-4. my db.session.commits() are super messy but getting rid of them breaks some stuff so whatever
-5. ok my test_models class now doesn't work but that's fine since I was relying on it to test when I didn't have postman
-
-10:56 AM
-
-1. might finally be time to start doing the writeup and justify a bunch of decisions
-2. there's lwk a lot of stuff I'll put that somewhere else in my document
-3. writeup long but interesting
-
-woke up
-
-
+NEW: 
+ Removed duplicate code into helper methods (errorResponse, getOr404, listToJson, commitChanges), and performed extensive API testing via Postman to ensure all endpoints work correctly.
+ Added a user_id primary key to the User() model for better database practices and enable username changes and duplicate usernames
+ Added a datetimeCreated field to Club() model to enable sorting by creation time.
 

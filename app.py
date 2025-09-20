@@ -182,16 +182,27 @@ def createUserRoute():
     except Exception as e:
         return errorResponse(str(e))
 
-@app.route("/api/users/<username>", methods=["PUT"])
-def updateUser(username):
+@app.route("/api/users/<int:user_id>", methods=["GET"])
+def getUser(user_id):
+    """Get a user by their ID.
+    (arg) user_id-int: The user's ID.
+    (return) Response: JSON representation of the user.
+    """
+    user = getOr404(User, id=user_id)
+    if not user:
+        return errorResponse("User not found", 404)
+    return jsonify(user.toJson())
+
+@app.route("/api/users/<int:user_id>", methods=["PUT"])
+def updateUser(user_id):
     """Update an existing user.
-    (arg) username-str: The user's username.
+    (arg) user_id-int: The user's ID.
     (return) Response: JSON representation of the updated user.
     """
     data = request.get_json()
     if not data:
         return errorResponse("No input data provided")
-    user = getOr404(User, username=username)
+    user = getOr404(User, id=user_id)
     if not user:
         return errorResponse("User not found", 404)
     if "email" in data:
@@ -206,20 +217,20 @@ def updateUser(username):
         return error
     return jsonify(user.toJson())
 
-@app.route("/api/users/<username>", methods=["DELETE"])
-def deleteUser(username):
-    """Delete a user by their username.
-    (arg) username-str: The user's username.
+@app.route("/api/users/<int:user_id>", methods=["DELETE"])
+def deleteUser(user_id):
+    """Delete a user by their ID.
+    (arg) user_id-int: The user's ID.
     (return) Response: JSON confirmation message.
     """
-    user = getOr404(User, username=username)
+    user = getOr404(User, id=user_id)
     if not user:
         return errorResponse("User not found", 404)
     db.session.delete(user)
     error = commitChanges()
     if error:
         return error
-    return jsonify({"message": f"User {username} deleted"}), 200
+    return jsonify({"message": f"User {user.username} deleted"}), 200
 
 @app.route("/api/tags/<tagName>", methods=["GET"])
 def getTagClubs(tagName):

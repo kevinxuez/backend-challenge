@@ -21,10 +21,10 @@ def testDataLoading(testClient):
     """Test that user data and club data load correctly.
     (return) None
     """
-    load_data()
-    create_user()
-    db.session.commit()
     with app.app_context():
+        load_data()
+        create_user()
+        db.session.commit()  # Explicitly commit after loading data
         josh = User.query.filter_by(username="Josh").first()
         assert josh is not None
         assert josh.email == "josh@upenn.edu"
@@ -38,6 +38,7 @@ def testClubLoading(testClient):
     """
     with app.app_context():
         load_data()
+        db.session.commit()  # Commit after loading
         pppjo = Club.query.filter_by(code="pppjo").first()
         assert pppjo is not None
         assert pppjo.name == (
@@ -61,6 +62,7 @@ def testLegacyDataLoading(testClient):
     """
     with app.app_context():
         load_data()
+        db.session.commit()  # Commit after loading
         pppjo = Club.query.filter_by(code="pppjo").first()
         assert pppjo is not None
         assert pppjo.name == (
@@ -68,7 +70,7 @@ def testLegacyDataLoading(testClient):
         )
         tagsPppjo = {tag.name for tag in pppjo.tags}
         assert tagsPppjo == {"Pre-Professional", "Athletics", "Undergraduate"}
-        db.session.commit()
+        
         lorem = Club.query.filter_by(code="lorem-ipsum").first()
         assert lorem is not None
         tagsLorem = {tag.name for tag in lorem.tags}
@@ -97,22 +99,26 @@ def testUserWithLegacyFavorites(testClient):
     """
     with app.app_context():
         load_data()
+        db.session.commit()  # Commit loaded data first
+        
         user = User.createNewUser(
             "legacyUser", "legacy@example.com", {"pppjo", "locustlabs"}
         )
-        User.addUserToDb(user)
+        User.addUserToDb(user)  # This method still commits internally
+        
         retrievedUser = User.query.filter_by(
             username="legacyUser"
         ).first()
-        db.session.commit()
         assert retrievedUser is not None
         favoriteCodes = {club.code for club in retrievedUser.favoriteClubs}
         assert favoriteCodes == {"pppjo", "locustlabs"}
+        
         retrievedUser.addFavorite("penn-memes")
-        db.session.commit()
+        db.session.commit()  # Manually commit changes
         favoriteCodes = {club.code for club in retrievedUser.favoriteClubs}
         assert favoriteCodes == {"pppjo", "locustlabs", "penn-memes"}
+        
         retrievedUser.removeFavorite("pppjo")
-        db.session.commit()
+        db.session.commit()  # Manually commit changes
         favoriteCodes = {club.code for club in retrievedUser.favoriteClubs}
         assert favoriteCodes == {"locustlabs", "penn-memes"}

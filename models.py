@@ -1,6 +1,7 @@
 from app import db
+from datetime import datetime
 from sqlalchemy import String, Text, Integer, Boolean, CheckConstraint, Table, Column, \
-    ForeignKey
+    ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 clubTagAssociation = Table(
@@ -11,7 +12,7 @@ clubTagAssociation = Table(
 
 userClubAssociation = Table(
     'user_club_association', db.metadata,
-    Column('user_username', String, ForeignKey('user.username'),
+    Column('user_id', Integer, ForeignKey('user.id'),
            primary_key=True),
     Column('club_code', String, ForeignKey('club.code'), primary_key=True)
 )
@@ -58,6 +59,7 @@ class Club(db.Model):
     memberCount: Mapped[int] = mapped_column(Integer)
     undergraduatesAllowed: Mapped[bool] = mapped_column(Boolean)
     graduatesAllowed: Mapped[bool] = mapped_column(Boolean)
+    dateCreated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     __table_args__ = (
         CheckConstraint('memberCount >= 0', name="Positive member count"),
         CheckConstraint('LENGTH(name) >= 3', name="No short name length"),
@@ -86,7 +88,7 @@ class Club(db.Model):
                     clubTagAssociation.insert().values(
                         club_code=self.code, tag_name=tag.name)
                 )
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     @classmethod
     def fromLegacyDbJson(cls, jsonData: dict):
@@ -104,7 +106,8 @@ class Club(db.Model):
             description=jsonData["description"],
             memberCount=jsonData.get("memberCount", 0),
             undergraduatesAllowed=ugAllowed,
-            graduatesAllowed=gAllowed
+            graduatesAllowed=gAllowed,
+            dateCreated=datetime.utcnow()  # Set current time for legacy data
         )
         clubInstance.handleTags(set(tagsList))
         return clubInstance
@@ -117,13 +120,24 @@ class Club(db.Model):
         (return) Club: A new Club instance.
         """
         tagsList = jsonData.get("tags", [])
+        # Parse dateCreated if it exists, otherwise use current time
+        date_created = jsonData.get("dateCreated")
+        if date_created:
+            if isinstance(date_created, str):
+                date_created = datetime.fromisoformat(date_created.replace('Z', '+00:00'))
+            elif not isinstance(date_created, datetime):
+                date_created = datetime.utcnow()
+        else:
+            date_created = datetime.utcnow()
+            
         clubInstance = cls(
             code=jsonData["code"],
             name=jsonData["name"],
             description=jsonData["description"],
             memberCount=jsonData.get("memberCount", 0),
             undergraduatesAllowed=jsonData.get("undergraduatesAllowed"),
-            graduatesAllowed=jsonData.get("graduatesAllowed")
+            graduatesAllowed=jsonData.get("graduatesAllowed"),
+            dateCreated=date_created
         )
         clubInstance.handleTags(set(tagsList))
         return clubInstance
@@ -151,7 +165,8 @@ class Club(db.Model):
             description=description,
             memberCount=memberCount,
             undergraduatesAllowed=undergraduatesAllowed,
-            graduatesAllowed=graduatesAllowed
+            graduatesAllowed=graduatesAllowed,
+            dateCreated=datetime.utcnow()
         )
         clubInstance.handleTags(tags)
         return clubInstance
@@ -165,13 +180,13 @@ class Club(db.Model):
         """
         if isinstance(addedClub, Club):
             db.session.add(addedClub)
-            db.session.commit()
+            db.session.commit()  # Keep commit here as this is a class method for adding to DB
             return addedClub
 
     def toJson(self) -> dict:
         """Return a JSON-serializable dictionary of the Club.
         (return) dict: Dictionary with keys "code", "name", "description",
-        "tags", "memberCount", "undergraduatesAllowed", and "graduatesAllowed".
+        "tags", "memberCount", "undergraduatesAllowed", "graduatesAllowed", and "dateCreated".
         """
         return {
             "code": self.code,
@@ -180,7 +195,8 @@ class Club(db.Model):
             "tags": [tag.name for tag in self.tags],
             "memberCount": self.memberCount,
             "undergraduatesAllowed": self.undergraduatesAllowed,
-            "graduatesAllowed": self.graduatesAllowed
+            "graduatesAllowed": self.graduatesAllowed,
+            "dateCreated": self.dateCreated.isoformat() if self.dateCreated else None
         }
 
     def updateName(self, newName: str):
@@ -190,7 +206,7 @@ class Club(db.Model):
         (return) None
         """
         self.name = newName
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def updateDescription(self, newDescription: str):
         """Update the club's description.
@@ -199,7 +215,7 @@ class Club(db.Model):
         (return) None
         """
         self.description = newDescription
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def addTag(self, newTag: str):
         """Add a new tag to the club.
@@ -208,7 +224,7 @@ class Club(db.Model):
         (return) None
         """
         self.handleTags({newTag})
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def removeTag(self, removedTag: str) -> str:
         """Remove the specified tag from the club.
@@ -219,7 +235,7 @@ class Club(db.Model):
         tag = Tag.query.filter_by(name=removedTag).first()
         if tag and tag in self.tags:
             self.tags.remove(tag)
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def updateMemberCount(self, newCount: int):
         """Update the club's member count.
@@ -228,7 +244,7 @@ class Club(db.Model):
         (return) int: The updated member count.
         """
         self.memberCount = newCount
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
         return self.memberCount
 
     def updateUndergraduatesAllowed(self, newStatus: bool):
@@ -242,7 +258,7 @@ class Club(db.Model):
             self.addTag("Undergraduate")
         else:
             self.removeTag("Undergraduate")
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def updateGraduatesAllowed(self, newStatus: bool):
         """Update the graduates allowed flag.
@@ -255,7 +271,7 @@ class Club(db.Model):
             self.addTag("Graduate")
         else:
             self.removeTag("Graduate")
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def __repr__(self):
         """Return a string representation of the Club.
@@ -266,7 +282,8 @@ class Club(db.Model):
 
 class User(db.Model):
     __tablename__ = 'user'
-    username: Mapped[str] = mapped_column(String, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     favoriteClubs = relationship("Club", secondary=userClubAssociation,
                                  back_populates="usersFavorited")
@@ -282,12 +299,12 @@ class User(db.Model):
             if not club:
                 continue
             if not db.session.query(userClubAssociation).filter_by(
-                club_code=club.code, user_username=self.username).first():
+                club_code=club.code, user_id=self.id).first():
                 db.session.execute(
                     userClubAssociation.insert().values(
-                        club_code=club.code, user_username=self.username)
+                        club_code=club.code, user_id=self.id)
                 )
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     @classmethod
     def createNewUser(cls, username: str, email: str, favorites: set[str]):
@@ -299,7 +316,9 @@ class User(db.Model):
         (return) User: A new User instance.
         """
         userInstance = cls(username=username, email=email)
-        userInstance.handleFavorite(favorites)
+        # Don't handle favorites here since user doesn't have ID yet
+        # Store favorites for later processing
+        userInstance._pending_favorites = favorites
         return userInstance
 
     @classmethod
@@ -311,14 +330,22 @@ class User(db.Model):
         """
         if isinstance(newUser, User):
             db.session.add(newUser)
-            db.session.commit()
+            db.session.flush()  # Get the ID without committing
+            
+            # Handle pending favorites after user has an ID
+            if hasattr(newUser, '_pending_favorites'):
+                newUser.handleFavorite(newUser._pending_favorites)
+                delattr(newUser, '_pending_favorites')
+            
+            db.session.commit()  # Keep commit here as this is a class method for adding to DB
             return newUser
 
     def toJson(self) -> dict:
         """Return a JSON-serializable dict of the User.
-        (return) dict: Dictionary with "username", "email", and "favorites".
+        (return) dict: Dictionary with "id", "username", "email", and "favorites".
         """
         return {
+            "id": self.id,
             "username": self.username,
             "email": self.email,
             "favorites": [club.code for club in self.favoriteClubs]
@@ -331,7 +358,7 @@ class User(db.Model):
         (return) None
         """
         self.email = newEmail
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def addFavorite(self, newFavorite: str):
         """Add a club to the user's favorites.
@@ -340,7 +367,7 @@ class User(db.Model):
         (return) None
         """
         self.handleFavorite({newFavorite})
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def removeFavorite(self, removedFavoriteCode: str) -> str:
         """Remove the specified club from favorites.
@@ -351,7 +378,7 @@ class User(db.Model):
         club = Club.query.filter_by(code=removedFavoriteCode).first()
         if club in self.favoriteClubs:
             self.favoriteClubs.remove(club)
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def updateUsername(self, newUsername: str):
         """Update the user's username.
@@ -360,7 +387,7 @@ class User(db.Model):
         (return) None
         """
         self.username = newUsername
-        db.session.commit()
+        # Removed db.session.commit() - let caller handle commits
 
     def __repr__(self):
         """Return a string representation of the User.
