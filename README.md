@@ -25,8 +25,8 @@ Fill out this section as you complete the challenge!
 
 0. Determine how to model the data contained within `clubs.json` and then complete `bootstrap.py`
 1. Activate the Poetry shell with `poetry shell`.
-2. Run `python3 bootstrap.py` to create the database and populate it.
-3. Use `flask run` to run the project.
+2. Run `python3 -m scripts.bootstrap.py` to create the database and populate it.
+3. Use `cd src`, then `flask run` after going inside src to run the project.
 4. Follow the instructions [here](https://www.notion.so/pennlabs/Backend-Challenge-862656cb8b7048db95aaa4e2935b77e5).
 5. Document your work in this `README.md` file.
 
@@ -48,16 +48,13 @@ pytest
 
 ## Reflection:
 
-Honestly, this project was a lot of fun to make and get me locked back into the second semester. I really enjoyed setting up my model and seeing my API work actually come to life. 
-The biggest pain points for me was just the procrastination (5AM work!) and getting to work the relationship between some of the datapoints. As you can see in my "Coding Thoughts" page, I tried to use mutableSet for like 3 hours and it was a little frustrating. Otherwise though, it was a lot of fun and I hope to meet some more of you guys.
+Honestly, this project was fun to edit and improve upon. I enjoyed refining the code and adding new features, especially the review system. The most challenging part was actually migrating all the files to the new structured file system, as it was a tedious effort to change all the imports manually. One thing I made sure to do was implement all my "future improvements" from the previous writeup, which included input validation, reducing commits, and adding user_id and datetime fields.
+
+When it comes to new features, the main thing I added was a review system that allows users to leave reviews for clubs. This involved creating a new Review model, adding API endpoints for creating and retrieving reviews, and updating the Club model to include a relationship with reviews. I also made sure to add tests for the new functionality.
 
 ## Future Improvements (1):
 
-1. Heavily improve performance by finding out where I can remove DB.session.commit(). I did not want to run through my code in the last hour to find exactly where I can remove it so I got lazy. There's a lot of places in model.py I can definite remove the commit() because I have a whole commit API function to serve as the commiter FIXED
-2. Refactor my User() model to have an ID as the primary key such that the Username just becomes a unique thing. This way, the username can get easily changed and it would improve convenience FIXED
-3. Add dateTime to my Club() model. This way, there exists another way to sort clubs when looking for something to review FIXED
-4. Redo my encapsulation work: I was kind of lazy for this and just decided to not create getFunctions. My issue is I forgot know how to encapsulate fields/sqlAlchemy code, so I wasn't sure if it was worth the time to do it. Going back to do it now would be really good for both code future readability and security
-5. Add some more bad I/O catchers. As you can see in my docstrings for models.py, there exists so many types of bad input that I don't really attempt to catch outside of some basic error calling in app.py.  FIXED
+
 
 
 ## API Decision Justification:
@@ -116,3 +113,13 @@ NEW:
  Added a datetimeCreated field to Club() model to enable sorting by creation time.
 
 2. 
+Added I/O validation to API endpoints to catch bad input data and return appropriate error messages.
+Added I/O validation to model methods to ensure data integrity at the model level.
+Wrote additional pytest tests to cover new validation logic and edge cases.
+
+3. 
+Refactored file structure and improved encapsulation by adding getter methods to models.
+Reviewed and cleaned up code for readability and maintainability.
+
+4. 
+Added a fully functional review system

@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src.app import app
 from src.database import db, DB_FILE
-from src.models import Club, User
+from src.models import Club, User, Review
 
 def create_user():
     """Create a new user with preset favorite clubs.
@@ -29,6 +29,32 @@ def load_data():
             Club.addClubToDb(Club.fromLegacyDbJson(club))
     db.session.commit()
 
+def create_sample_reviews():
+    """Create sample reviews for existing clubs."""
+    sample_reviews = [
+        {
+            "user_id": 1,  # Josh
+            "club_code": "pppjo",
+            "rating": 9,
+            "title": "Amazing juggling experience!",
+            "text": "The pre-professional atmosphere really helped me prepare for recruiting. Great community!"
+        },
+        {
+            "user_id": 1,
+            "club_code": "penn-memes",
+            "rating": 8,
+            "title": "Great meme community",
+            "text": "Love the literary memes and graduate-level humor. Very welcoming environment."
+        }
+    ]
+    
+    for review_data in sample_reviews:
+        try:
+            review = Review.createNewReview(**review_data)
+            Review.addReviewToDb(review)
+        except ValueError as e:
+            print(f"Skipping review creation: {e}")
+
 if __name__ == "__main__":
     localDbFile = f"instance/{DB_FILE}"
     if os.path.exists(localDbFile):
@@ -37,3 +63,4 @@ if __name__ == "__main__":
         db.create_all()
         load_data()  # Load clubs first
         create_user()  # Then create user with favorites
+        create_sample_reviews()  # Finally add sample reviews

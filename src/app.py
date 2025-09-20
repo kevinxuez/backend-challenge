@@ -316,5 +316,212 @@ def getClubFavoritedBy(clubCode):
     except (ValidationError, ValueError, TypeError) as e:
         return errorResponse(str(e), 400)
 
+# ===== REVIEW ENDPOINTS =====
+
+@app.route("/api/reviews", methods=["GET"])
+def getReviews():
+    """Return all reviews with pagination."""
+    try:
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 10, type=int)
+        
+        if per_page > 100:
+            return errorResponse("per_page cannot exceed 100", 400)
+        
+        reviews = Review.query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        return jsonify({
+            "reviews": [review.toJson() for review in reviews.items],
+            "total": reviews.total,
+            "pages": reviews.pages,
+            "current_page": page
+        })
+    except Exception as e:
+        return errorResponse(f"Error fetching reviews: {str(e)}", 500)
+
+@app.route("/api/reviews", methods=["POST"])
+def createReview():
+    """Create a new review."""
+    try:
+        data = request.get_json()
+        validate_json_input(data, ["user_id", "club_code", "rating", "title"])
+        
+        review = Review.createNewReview(
+            user_id=data["user_id"],
+            club_code=data["club_code"],
+            rating=data["rating"],
+            title=data["title"],
+            text=data.get("text", "")
+        )
+        
+        Review.addReviewToDb(review)
+        return jsonify(review.toJson()), 201
+        
+    except (ValidationError, ValueError, TypeError) as e:
+        return errorResponse(str(e), 400)
+    except Exception as e:
+        db.session.rollback()
+        return errorResponse(f"Server error: {str(e)}", 500)
+
+@app.route("/api/reviews/<int:review_id>", methods=["GET"])
+def getReview(review_id):
+    """Get specific review by ID."""
+    review = getOr404(Review, id=review_id)
+    if not review:
+        return errorResponse("Review not found", 404)
+    return jsonify(review.toJson())
+
+@app.route("/api/reviews/<int:review_id>", methods=["PUT"])
+def updateReview(review_id):
+    """Update existing review."""
+    try:
+        data = request.get_json()
+        validate_json_input(data)
+        
+        review = getOr404(Review, id=review_id)
+        if not review:
+            return errorResponse("Review not found", 404)
+        
+        # Apply updates with validation
+        if "rating" in data:
+            review.updateRating(data["rating"])
+        if "title" in data:
+            review.updateTitle(data["title"])
+        if "text" in data:
+            review.updateText(data["text"])
+        
+        error = commitChanges()
+        if error:
+            return error
+        return jsonify(review.toJson())
+        
+    except (ValidationError, ValueError, TypeError) as e:
+        return errorResponse(str(e), 400)
+    except Exception as e:
+        db.session.rollback()
+        return errorResponse(f"Server error: {str(e)}", 500)
+
+@app.route("/api/reviews/<int:review_id>", methods=["DELETE"])
+def deleteReview(review_id):
+    """Delete review."""
+    try:
+        review = getOr404(Review, id=review_id)
+        if not review:
+            return errorResponse("Review not found", 404)
+        
+        db.session.delete(review)
+        error = commitChanges()
+        if error:
+            return error
+        return jsonify({"message": f"Review {review_id} deleted"}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return errorResponse(f"Server error: {str(e)}", 500)
+
+@app.route("/api/clubs/<club_code>/reviews", methods=["GET"])
+def getClubReviews(club_code):
+    """Get all reviews for a specific club."""
+    try:
+        validate_club_code(club_code)
+        
+        club = getOr404(Club, code=club_code)
+        if not club:
+            return errorResponse("Club not found", 404)
+        
+        # Optional sorting and filtering
+        sort_by = request.args.get("sort_by", "created_at")
+        order = request.args.get("order", "desc")
+        min_rating = request.args.get("min_rating", type=int)
+        
+        query = Review.query.filter_by(club_code=club_code)
+        
+        if min_rating:
+            query = query.filter(Review.rating >= min_rating)
+        
+        if sort_by == "rating":
+            if order == "desc":
+                query = query.order_by(Review.rating.desc())
+            else:
+                query = query.order_by(Review.rating.asc())
+        else:  # default to created_at
+            if order == "desc":
+                query = query.order_by(Review.created_at.desc())
+            else:
+                query = query.order_by(Review.created_at.asc())
+        
+        reviews = query.all()
+        return jsonify([review.toJson() for review in reviews])
+        
+    except (ValidationError, ValueError, TypeError) as e:
+        return errorResponse(str(e), 400)
+    except Exception as e:
+        return errorResponse(f"Server error: {str(e)}", 500)
+
+@app.route("/api/clubs/<club_code>/reviews/stats", methods=["GET"])
+def getClubReviewStats(club_code):
+    """Return review statistics for club."""
+    try:
+        validate_club_code(club_code)
+        
+        club = getOr404(Club, code=club_code)
+        if not club:
+            return errorResponse("Club not found", 404)
+        
+        reviews = club.reviews
+        total_reviews = len(reviews)
+        average_rating = club.get_average_rating()
+        
+        # Calculate rating distribution
+        rating_distribution = {str(i): 0 for i in range(1, 11)}
+        for review in reviews:
+            rating_distribution[str(review.rating)] += 1
+        
+        return jsonify({
+            "club_code": club_code,
+            "club_name": club.name,
+            "total_reviews": total_reviews,
+            "average_rating": average_rating,
+            "rating_distribution": rating_distribution
+        })
+        
+    except (ValidationError, ValueError, TypeError) as e:
+        return errorResponse(str(e), 400)
+    except Exception as e:
+        return errorResponse(f"Server error: {str(e)}", 500)
+
+@app.route("/api/users/<int:user_id>/reviews", methods=["GET"])
+def getUserReviews(user_id):
+    """Get all reviews written by a specific user."""
+    try:
+        user = getOr404(User, id=user_id)
+        if not user:
+            return errorResponse("User not found", 404)
+        
+        reviews = Review.query.filter_by(user_id=user_id).order_by(Review.created_at.desc()).all()
+        return jsonify([review.toJson() for review in reviews])
+        
+    except Exception as e:
+        return errorResponse(f"Server error: {str(e)}", 500)
+
+@app.route("/api/users/<int:user_id>/reviews/<club_code>", methods=["GET"])
+def getUserClubReview(user_id, club_code):
+    """Get user's review for specific club."""
+    try:
+        validate_club_code(club_code)
+        
+        review = Review.query.filter_by(user_id=user_id, club_code=club_code).first()
+        if not review:
+            return errorResponse("Review not found", 404)
+        
+        return jsonify(review.toJson())
+        
+    except (ValidationError, ValueError, TypeError) as e:
+        return errorResponse(str(e), 400)
+    except Exception as e:
+        return errorResponse(f"Server error: {str(e)}", 500)
+
 if __name__ == "__main__":
     app.run()

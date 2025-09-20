@@ -41,6 +41,8 @@ def main():
         ("python -m pytest tests/test_models.py -v", "Model Tests"),
         ("python -m pytest tests/test_apis.py", "API functionality tests"),
         ("python -m pytest tests/test_api_validation.py -v", "API I/O Tests"),
+        ("python -m pytest tests/test_reviews.py -v", "Review Model Tests"),
+        ("python -m pytest tests/test_review_apis.py -v", "Review API Tests"),
         ("python -m pytest tests/ -v", "All Tests Combined")
     ]
     

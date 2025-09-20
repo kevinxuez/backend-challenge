@@ -1,7 +1,7 @@
 from .database import db
 from datetime import datetime
 from sqlalchemy import String, Text, Integer, Boolean, CheckConstraint, Table, Column, \
-    ForeignKey, DateTime
+    ForeignKey, DateTime, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .validation import (validate_string, validate_integer, validate_boolean, 
                        validate_club_code, validate_tags, validate_email, sanitize_html)
@@ -73,6 +73,7 @@ class Club(db.Model):
                         back_populates="clubs")
     usersFavorited = relationship("User", secondary=userClubAssociation,
                                   back_populates="favoriteClubs")
+    reviews = relationship("Review", back_populates="club", cascade="all, delete-orphan")
 
     def handleTags(self, tagNames: set):
         """Associate the provided tag names with this Club instance.
@@ -234,10 +235,18 @@ class Club(db.Model):
             db.session.commit()
             return addedClub
 
+    def get_average_rating(self) -> float:
+        """Calculate average rating from all reviews."""
+        if not self.reviews:
+            return 0.0
+        total_rating = sum(review.rating for review in self.reviews)
+        return round(total_rating / len(self.reviews), 2)
+
     def toJson(self) -> dict:
         """Return a JSON-serializable dictionary of the Club.
         (return) dict: Dictionary with keys "code", "name", "description",
-        "tags", "memberCount", "undergraduatesAllowed", "graduatesAllowed", and "dateCreated".
+        "tags", "memberCount", "undergraduatesAllowed", "graduatesAllowed", "dateCreated",
+        "reviews_count", and "average_rating".
         """
         return {
             "code": self.code,
@@ -247,7 +256,9 @@ class Club(db.Model):
             "memberCount": self.memberCount,
             "undergraduatesAllowed": self.undergraduatesAllowed,
             "graduatesAllowed": self.graduatesAllowed,
-            "dateCreated": self.dateCreated.isoformat() if self.dateCreated else None
+            "dateCreated": self.dateCreated.isoformat() if self.dateCreated else None,
+            "reviews_count": len(self.reviews),
+            "average_rating": self.get_average_rating()
         }
 
     def updateName(self, newName: str):
@@ -341,6 +352,7 @@ class User(db.Model):
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     favoriteClubs = relationship("Club", secondary=userClubAssociation,
                                  back_populates="usersFavorited")
+    reviews_made = relationship("Review", back_populates="user", cascade="all, delete-orphan")
 
     def handleFavorite(self, favoriteNames: set):
         """Associate provided club codes as user's favorites.
@@ -417,13 +429,14 @@ class User(db.Model):
 
     def toJson(self) -> dict:
         """Return a JSON-serializable dict of the User.
-        (return) dict: Dictionary with "id", "username", "email", and "favorites".
+        (return) dict: Dictionary with "id", "username", "email", "favorites", and "reviews_count".
         """
         return {
             "id": self.id,
             "username": self.username,
             "email": self.email,
-            "favorites": [club.code for club in self.favoriteClubs]
+            "favorites": [club.code for club in self.favoriteClubs],
+            "reviews_count": len(self.reviews_made)
         }
 
     def updateEmail(self, newEmail: str):
@@ -488,3 +501,133 @@ class User(db.Model):
         (return) str: String in the format "<User username>".
         """
         return f"<User {self.username}>"
+
+
+class Review(db.Model):
+    __tablename__ = 'review'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('user.id'), nullable=False)
+    club_code: Mapped[str] = mapped_column(String, ForeignKey('club.code'), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    title: Mapped[str] = mapped_column(String(100), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="reviews_made")
+    club = relationship("Club", back_populates="reviews")
+    
+    # Constraints
+    __table_args__ = (
+        CheckConstraint('rating >= 1 AND rating <= 10', name='rating_range'),
+        CheckConstraint('LENGTH(title) >= 5', name='title_min_length'),
+        UniqueConstraint('user_id', 'club_code', name='one_review_per_user_per_club')
+    )
+
+    @classmethod
+    def createNewReview(cls, user_id: int, club_code: str, rating: int, 
+                       title: str, text: str = ""):
+        """Create a new Review with comprehensive validation.
+        (arg) user_id-int: ID of the user creating the review.
+        (arg) club_code-str: Code of the club being reviewed.
+        (arg) rating-int: Rating from 1-10.
+        (arg) title-str: Review title.
+        (arg) text-str: Review text content (optional).
+        (return) Review: A new Review instance.
+        """
+        # Validate inputs
+        validate_integer(user_id, "User ID", min_val=1)
+        validate_club_code(club_code)
+        validate_integer(rating, "Rating", min_val=1, max_val=10)
+        validate_string(title, "Title", min_length=5, max_length=100)
+        validate_string(text, "Text", min_length=0, max_length=2000, required=False)
+        
+        # Check if user and club exist
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            raise ValueError(f"User with ID {user_id} does not exist")
+        
+        club = Club.query.filter_by(code=club_code).first()
+        if not club:
+            raise ValueError(f"Club with code '{club_code}' does not exist")
+        
+        # Check for duplicate review
+        existing_review = cls.query.filter_by(user_id=user_id, club_code=club_code).first()
+        if existing_review:
+            raise ValueError(f"User has already reviewed club '{club_code}'")
+        
+        # Sanitize inputs
+        title = sanitize_html(title.strip())
+        text = sanitize_html(text.strip()) if text else ""
+        
+        return cls(
+            user_id=user_id,
+            club_code=club_code.strip().lower(),
+            rating=rating,
+            title=title,
+            text=text,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+
+    @classmethod 
+    def addReviewToDb(cls, newReview):
+        """Add review to database if valid.
+        (arg) newReview-Review: The Review instance to add.
+        (return) Review: The added Review instance.
+        """
+        if isinstance(newReview, Review):
+            db.session.add(newReview)
+            db.session.commit()
+            return newReview
+
+    def toJson(self) -> dict:
+        """Return JSON representation of the review.
+        (return) dict: Dictionary with review data.
+        """
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "club_code": self.club_code,
+            "rating": self.rating,
+            "title": self.title,
+            "text": self.text,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "user_username": self.user.username if self.user else None,
+            "club_name": self.club.name if self.club else None
+        }
+
+    def updateRating(self, newRating: int):
+        """Update rating with validation.
+        (arg) newRating-int: The new rating (1-10).
+        (return) None
+        """
+        validate_integer(newRating, "Rating", min_val=1, max_val=10)
+        self.rating = newRating
+        self.updated_at = datetime.utcnow()
+
+    def updateTitle(self, newTitle: str):
+        """Update title with validation.
+        (arg) newTitle-str: The new title.
+        (return) None
+        """
+        validate_string(newTitle, "Title", min_length=5, max_length=100)
+        self.title = sanitize_html(newTitle.strip())
+        self.updated_at = datetime.utcnow()
+
+    def updateText(self, newText: str):
+        """Update text with validation.
+        (arg) newText-str: The new review text.
+        (return) None
+        """
+        validate_string(newText, "Text", min_length=0, max_length=2000, required=False)
+        self.text = sanitize_html(newText.strip()) if newText else ""
+        self.updated_at = datetime.utcnow()
+
+    def __repr__(self):
+        """Return a string representation of the Review.
+        (return) str: String in the format "<Review id: title>".
+        """
+        return f"<Review {self.id}: {self.title}>"

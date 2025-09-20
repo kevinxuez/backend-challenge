@@ -5,7 +5,7 @@ import os
 # Add the src and scripts directories to the Python path
 
 from src.app import app, db
-from src.models import Club, User
+from src.models import Club, User, Review
 from scripts.bootstrap import create_user, load_data
 
 @pytest.fixture(scope="function")
@@ -226,3 +226,98 @@ def test_duplicate_prevention(testClient):
         # Duplicate email should fail
         with pytest.raises(ValueError):
             User.createNewUser("testuser2", "test1@test.com", set())
+
+
+def test_club_with_reviews(testClient):
+    """Test club model with reviews."""
+    with app.app_context():
+        create_user()
+        user = User.query.filter_by(username="Josh").first()
+        club = Club.query.filter_by(code="pppjo").first()
+        
+        # Initially no reviews
+        assert len(club.reviews) == 0
+        assert club.get_average_rating() == 0.0
+        
+        # Add review
+        review = Review.createNewReview(
+            user_id=user.id,
+            club_code=club.code,
+            rating=8,
+            title="Great club!",
+            text="Test"
+        )
+        Review.addReviewToDb(review)
+        
+        # Refresh club from database
+        club = Club.query.filter_by(code="pppjo").first()
+        assert len(club.reviews) == 1
+        assert club.get_average_rating() == 8.0
+
+
+def test_user_with_reviews(testClient):
+    """Test user model with reviews."""
+    with app.app_context():
+        create_user()
+        user = User.query.filter_by(username="Josh").first()
+        
+        # Initially no reviews
+        assert len(user.reviews_made) == 0
+        
+        # Add review
+        review = Review.createNewReview(
+            user_id=user.id,
+            club_code="pppjo",
+            rating=8,
+            title="Great club!",
+            text="Test"
+        )
+        Review.addReviewToDb(review)
+        
+        # Refresh user from database
+        user = User.query.filter_by(username="Josh").first()
+        assert len(user.reviews_made) == 1
+
+
+def test_club_json_with_reviews(testClient):
+    """Test club JSON includes review data."""
+    with app.app_context():
+        create_user()
+        user = User.query.filter_by(username="Josh").first()
+        club = Club.query.filter_by(code="pppjo").first()
+        
+        # Add review
+        review = Review.createNewReview(
+            user_id=user.id,
+            club_code=club.code,
+            rating=8,
+            title="Great club!",
+            text="Test"
+        )
+        Review.addReviewToDb(review)
+        
+        # Check JSON includes review data
+        club_json = club.toJson()
+        assert club_json["reviews_count"] == 1
+        assert club_json["average_rating"] == 8.0
+
+
+def test_user_json_with_reviews(testClient):
+    """Test user JSON includes review count."""
+    with app.app_context():
+        create_user()
+        user = User.query.filter_by(username="Josh").first()
+        
+        # Add review
+        review = Review.createNewReview(
+            user_id=user.id,
+            club_code="pppjo",
+            rating=8,
+            title="Great club!",
+            text="Test"
+        )
+        Review.addReviewToDb(review)
+        
+        # Check JSON includes review count
+        user_json = user.toJson()
+        assert user_json["reviews_count"] == 1
